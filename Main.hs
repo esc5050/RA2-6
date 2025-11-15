@@ -150,3 +150,26 @@ handleIOException defaultValue e = do
     putStrLn $ "Erro de I/O ao ler arquivo: " ++ show e
     putStrLn "Iniciando com estado vazio."
     pure defaultValue
+    
+-- 4. 
+
+historicoPorItem :: String -> [LogEntry] -> [LogEntry]
+historicoPorItem iid = filter (matches iid)
+  where
+    matches key entry = extractItemId entry == Just key
+
+logsDeErro :: [LogEntry] -> [LogEntry]
+logsDeErro = filter isFailure
+  where
+    isFailure entry = case status entry of
+      Falha _ -> True
+      Sucesso -> False
+
+itemMaisMovimentado :: [LogEntry] -> Maybe (String, Int)
+itemMaisMovimentado entries
+  | Map.null contagens = Nothing
+  | otherwise = Just $ maximumBy (comparing snd) (Map.toList contagens)
+  where
+    relevantes = filter ((`elem` [Add, Remove, Update]) . acao) entries
+    chaves = mapMaybe extractItemId relevantes
+    contagens = Map.fromListWith (+) (map (\iid -> (iid, 1)) chaves)

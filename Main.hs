@@ -99,3 +99,54 @@ queryItem time iid inv =
   case Map.lookup iid inv of
     Nothing -> Left "Item não encontrado"
     Just item -> Right (item, LogEntry time Query (detailFor iid "Consulta realizada") Sucesso)
+
+-- 3.
+
+loadInventario :: IO Inventario
+loadInventario = (do
+    exists <- doesFileExist inventarioFile
+    if not exists
+      then pure Map.empty
+      else do
+        contents <- readFile inventarioFile
+        case readMaybe contents of
+          Just inv -> pure inv
+          Nothing -> do
+            putStrLn $ "Aviso: " ++ inventarioFile ++ " corrompido. Iniciando com inventário vazio."
+            pure Map.empty
+  ) `catch` handleIOException Map.empty
+
+saveInventario :: Inventario -> IO ()
+saveInventario inv = writeFile inventarioFile (show inv)
+
+appendLog :: LogEntry -> IO ()
+appendLog entry = appendFile auditoriaLogFile (show entry ++ "\n")
+
+loadLogEntries :: IO [LogEntry]
+loadLogEntries = (do
+    exists <- doesFileExist auditoriaLogFile
+    if not exists
+      then pure []
+      else do
+        contents <- readFile auditoriaLogFile
+        let parsed = mapMaybe readMaybe (lines contents) 
+        pure parsed
+  ) `catch` handleIOException []
+
+loadLogHistory :: IO ()
+loadLogHistory = (do
+    exists <- doesFileExist auditoriaLogFile
+    if not exists
+      then putStrLn "Nenhum log de auditoria anterior encontrado."
+      else do
+        logContent <- readFile auditoriaLogFile
+        let preview = takeLast 5 (lines logContent)
+        putStrLn $ "Últimos 5 registros (" ++ auditoriaLogFile ++ "):"
+        mapM_ putStrLn (if null preview then ["(Arquivo vazio)"] else preview)
+  ) `catch` handleIOException ()
+
+handleIOException :: a -> SomeException -> IO a
+handleIOException defaultValue e = do
+    putStrLn $ "Erro de I/O ao ler arquivo: " ++ show e
+    putStrLn "Iniciando com estado vazio."
+    pure defaultValue

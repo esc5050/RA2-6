@@ -1,0 +1,10 @@
+fromList [("1",Item {itemID = "1", nome = "Laptop Dell XPS 15", quantidade = 12, categoria = "Eletrônicos"}),
+          ("2",Item {itemID = "2", nome = "Mouse Logitech MX Master 3", quantidade = 55, categoria = "Periféricos"}),
+          ("3",Item {itemID = "3", nome = "Teclado Mecânico Redragon", quantidade = 40, categoria = "Periféricos"}),
+          ("4",Item {itemID = "4", nome = "Cadeira de Escritório Ergonômica", quantidade = 8, categoria = "Mobiliário"}),
+          ("5",Item {itemID = "5", nome = "Resma de Papel A4", quantidade = 250, categoria = "Papelaria"}),
+          ("6",Item {itemID = "6", nome = "Caixa de Canetas BIC (Azul)", quantidade = 720, categoria = "Papelaria"}),
+          ("7",Item {itemID = "7", nome = "Roteador WiFi TP-Link Archer", quantidade = 25, categoria = "Redes"}),
+          ("8",Item {itemID = "8", nome = "HD Externo Seagate 1TB", quantidade = 30, categoria = "Armazenamento"}),
+          ("9",Item {itemID = "9", nome = "Monitor LG Ultrawide 29\"", quantidade = 18, categoria = "Periféricos"}),
+          ("10",Item {itemID = "10", nome = "Caixa de Clipes (100 un.)", quantidade = 150, categoria = "Papelaria"})]

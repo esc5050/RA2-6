@@ -1,0 +1,10 @@
+LogEntry {timestamp = 2025-11-14 23:58:39.485468905 UTC, acao = Add, detalhes = "item=1 :: Adicionado: Teste 01", status = Sucesso}
+LogEntry {timestamp = 2025-11-14 23:58:54.253775977 UTC, acao = Add, detalhes = "item=2 :: Adicionado: Teste 02", status = Sucesso}
+LogEntry {timestamp = 2025-11-14 23:59:14.617617937 UTC, acao = Add, detalhes = "item=3 :: Adicionado: Teste 03", status = Sucesso}
+LogEntry {timestamp = 2025-11-15 00:04:40.5459967 UTC, acao = Add, detalhes = "item=4 :: Adicionado: Teste 04", status = Sucesso}
+LogEntry {timestamp = 2025-11-15 00:04:53.110086095 UTC, acao = Remove, detalhes = "item=4 :: Tentativa de remover -> Estoque insuficiente", status = Falha "Estoque insuficiente"}
+LogEntry {timestamp = 2025-11-15 00:17:48.457991125 UTC, acao = Add, detalhes = "item=1 :: Tentativa de adicionar -> Item j\225 existe no invent\225rio (ID duplicado)", status = Falha "Item j\225 existe no invent\225rio (ID duplicado)"}
+LogEntry {timestamp = 2025-11-15 00:18:07.795886512 UTC, acao = Add, detalhes = "item=5 :: Adicionado: Exemplo 01", status = Sucesso}
+LogEntry {timestamp = 2025-11-15 00:19:49.690435932 UTC, acao = Remove, detalhes = "item=5 :: Removido: 10 unidades (restante: 5)", status = Sucesso}
+LogEntry {timestamp = 2025-11-15 00:20:46.652303297 UTC, acao = Update, detalhes = "item=5 :: Atualizado: Exemplo Alterado", status = Sucesso}
+LogEntry {timestamp = 2025-11-15 00:21:52.444978227 UTC, acao = Query, detalhes = "item=5 :: Consulta realizada", status = Sucesso}

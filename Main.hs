@@ -216,3 +216,143 @@ prompt label = do
 logFailure :: UTCTime -> AcaoLog -> String -> String -> IO ()
 logFailure time action details err =
   appendLog $ LogEntry time action (details ++ " -> " ++ err) (Falha err)
+
+-- 6.
+
+printMenu :: IO ()
+printMenu = do
+  putStrLn "\nComandos disponíveis:"
+  putStrLn "  add       - adicionar novo item"
+  putStrLn "  remove    - remover unidades de um item"
+  putStrLn "  update    - atualizar campos de um item"
+  putStrLn "  query     - consultar item"
+  putStrLn "  list      - listar inventário completo"
+  putStrLn "  report    - gerar relatório baseado nos logs"
+  putStrLn "  help      - mostrar este menu"
+  putStrLn "  exit      - sair do sistema"
+
+handleAdd :: Inventario -> IO Inventario
+handleAdd inv = do
+  iid <- prompt "ID do item: "
+  name <- prompt "Nome: "
+  qtyInput <- prompt "Quantidade: "
+  cat <- prompt "Categoria: "
+  case readMaybe qtyInput of
+    Nothing -> putStrLn "Quantidade inválida." >> pure inv
+    Just qty -> do
+      time <- getCurrentTime
+      case addItem time iid name qty cat inv of
+        Left err -> do
+          logFailure time Add (detailFor iid "Tentativa de adicionar") err
+          putStrLn $ "Erro: " ++ err
+          pure inv
+        Right (inv', entry) -> do
+          appendLog entry
+          saveInventario inv'
+          putStrLn "Item adicionado com sucesso."
+          pure inv'
+
+handleRemove :: Inventario -> IO Inventario
+handleRemove inv = do
+  iid <- prompt "ID do item: "
+  qtyInput <- prompt "Quantidade a remover: "
+  case readMaybe qtyInput of
+    Nothing -> putStrLn "Quantidade inválida." >> pure inv
+    Just qty -> do
+      time <- getCurrentTime
+      case removeItem time iid qty inv of
+        Left err -> do
+          logFailure time Remove (detailFor iid "Tentativa de remover") err
+          putStrLn $ "Erro: " ++ err
+          pure inv
+        Right (inv', entry) -> do
+          appendLog entry
+          saveInventario inv'
+          putStrLn "Remoção aplicada."
+          pure inv'
+
+handleUpdate :: Inventario -> IO Inventario
+handleUpdate inv = do
+  iid <- prompt "ID do item: "
+  newName <- prompt "Novo nome (Enter para manter): "
+  newQtyInput <- prompt "Nova quantidade (Enter para manter): "
+  newCat <- prompt "Nova categoria (Enter para manter): "
+  
+  let qtyParsed
+        | null (trim newQtyInput) = Just Nothing
+        | otherwise = fmap Just (readMaybe newQtyInput)
+  
+  case qtyParsed of
+    Nothing -> putStrLn "Quantidade inválida." >> pure inv
+    Just qtyMaybe -> do
+      time <- getCurrentTime
+      let updateFn item = item
+            { nome = if null (trim newName) then nome item else newName
+            , quantidade = maybe (quantidade item) id qtyMaybe
+            , categoria = if null (trim newCat) then categoria item else newCat
+            }
+      case updateItem time iid updateFn inv of
+        Left err -> do
+          logFailure time Update (detailFor iid "Tentativa de atualizar") err
+          putStrLn $ "Erro: " ++ err
+          pure inv
+        Right (inv', entry) -> do
+          appendLog entry
+          saveInventario inv'
+          putStrLn "Item atualizado."
+          pure inv'
+
+handleQuery :: Inventario -> IO Inventario
+handleQuery inv = do
+  iid <- prompt "ID do item: "
+  time <- getCurrentTime
+  case queryItem time iid inv of
+    Left err -> do
+      logFailure time QueryFail (detailFor iid "Consulta falhou") err
+      putStrLn $ "Erro: " ++ err
+      pure inv
+    Right (item, entry) -> do
+      appendLog entry
+      putStrLn $ "Item encontrado: " ++ show item
+      pure inv
+
+handleList :: Inventario -> IO ()
+handleList inv
+  | Map.null inv = putStrLn "Inventário vazio."
+  | otherwise = do
+      putStrLn "\n--- Inventário Atual ---"
+      mapM_ printItem (Map.elems inv)
+      putStrLn "------------------------"
+  where
+    printItem item =
+      putStrLn $ "- " ++ itemID item ++ ": " ++ nome item ++
+                   " | qtd=" ++ show (quantidade item) ++
+                   " | categoria=" ++ categoria item
+
+handleReport :: Inventario -> IO Inventario
+handleReport inv = do
+  entries <- loadLogEntries
+  if null entries
+    then putStrLn "Nenhum log disponível para gerar relatório." >> pure inv
+    else do
+      putStrLn "\n===== Relatório de Auditoria ====="
+      putStrLn $ "Total de entradas registradas: " ++ show (length entries)
+
+      iid <- prompt "Item para histórico detalhado (Enter para pular): "
+      let key = trim iid
+      unless (null key) $ do
+        let hist = historicoPorItem key entries
+        putStrLn $ "Eventos para o item '" ++ key ++ "' (" ++ show (length hist) ++ "):"
+        mapM_ (putStrLn . ("  " ++) . formatDetailedLine) hist
+
+      let erros = logsDeErro entries
+      putStrLn $ "\nFalhas registradas: " ++ show (length erros)
+      mapM_ (putStrLn . ("  " ++) . formatDetailedLine) (take 5 erros)
+      
+      case itemMaisMovimentado entries of
+        Nothing -> putStrLn "\nNenhuma movimentação registrada (Add/Remove/Update)."
+        Just (iidTop, total) ->
+          putStrLn $ "\nItem mais movimentado: " ++ iidTop ++ " (" ++ show total ++ " operações)"
+      
+      putStrLn "=================================="
+      pure inv

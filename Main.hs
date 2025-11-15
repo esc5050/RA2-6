@@ -173,3 +173,46 @@ itemMaisMovimentado entries
     relevantes = filter ((`elem` [Add, Remove, Update]) . acao) entries
     chaves = mapMaybe extractItemId relevantes
     contagens = Map.fromListWith (+) (map (\iid -> (iid, 1)) chaves)
+
+-- 5.
+
+detailFor :: String -> String -> String
+detailFor iid msg = "item=" ++ iid ++ " :: " ++ msg
+
+trim :: String -> String
+trim = dropWhile isSpace . reverse . dropWhile isSpace . reverse
+
+normalize :: String -> String
+normalize = map toLower . trim
+
+takeLast :: Int -> [a] -> [a]
+takeLast n xs = drop (length xs - min n (length xs)) xs
+
+statusText :: StatusLog -> String
+statusText Sucesso = "Sucesso"
+statusText (Falha msg) = "Falha: " ++ msg
+
+formatDetailedLine :: LogEntry -> String
+formatDetailedLine entry =
+  show (timestamp entry)
+    ++ " | " ++ show (acao entry)
+    ++ " | " ++ statusText (status entry)
+    ++ " | " ++ detalhes entry
+
+extractItemId :: LogEntry -> Maybe String
+extractItemId entry =
+  case stripPrefix "item=" (dropWhile isSpace (detalhes entry)) of
+    Nothing -> Nothing
+    Just rest ->
+      let ident = takeWhile (\c -> c /= ' ' && c /= '|' && c /= ':') rest
+       in if null ident then Nothing else Just ident
+
+prompt :: String -> IO String
+prompt label = do
+  putStr label
+  hFlush stdout
+  getLine
+
+logFailure :: UTCTime -> AcaoLog -> String -> String -> IO ()
+logFailure time action details err =
+  appendLog $ LogEntry time action (details ++ " -> " ++ err) (Falha err)
